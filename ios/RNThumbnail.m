@@ -12,12 +12,17 @@
 }
 RCT_EXPORT_MODULE()
 
-RCT_EXPORT_METHOD(get:(NSString *)filepath resolve:(RCTPromiseResolveBlock)resolve
-                               reject:(RCTPromiseRejectBlock)reject)
+RCT_EXPORT_METHOD(get:(NSString *)filepath resolve:(RCTPromiseResolveBlock)resolve reject:(RCTPromiseRejectBlock)reject)
 {
     @try {
+        
+        if ([filepath containsString:@"thumb-"]) {
+            resolve(filepath);
+            return;
+        }
+        
         filepath = [filepath stringByReplacingOccurrencesOfString:@"file://"
-                                                  withString:@""];
+                                                       withString:@""];
         NSURL *vidURL = [NSURL fileURLWithPath:filepath];
         
         AVURLAsset *asset = [[AVURLAsset alloc] initWithURL:vidURL options:nil];
@@ -38,11 +43,8 @@ RCT_EXPORT_METHOD(get:(NSString *)filepath resolve:(RCTPromiseResolveBlock)resol
         NSFileManager *fileManager = [NSFileManager defaultManager];
         NSString *fullPath = [tempDirectory stringByAppendingPathComponent: [NSString stringWithFormat:@"thumb-%@.jpg", [[NSProcessInfo processInfo] globallyUniqueString]]];
         [fileManager createFileAtPath:fullPath contents:data attributes:nil];
-        CGImageRelease(imgRef);
-        if (resolve)
-            resolve(@{ @"path" : fullPath,
-                       @"width" : [NSNumber numberWithFloat: thumbnail.size.width],
-                       @"height" : [NSNumber numberWithFloat: thumbnail.size.height] });
+        
+        resolve(fullPath);
     } @catch(NSException *e) {
         reject(e.reason, nil, nil);
     }
